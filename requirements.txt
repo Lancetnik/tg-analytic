@@ -1,0 +1,10 @@
+telethon==1.24.0
+propan==0.0.3.7
+elasticsearch==8.1.2
+ormar==0.10.24
+asyncpg==0.25.0
+fastapi==0.75.1
+uvicorn==0.17.6
+minio==7.1.5
+
+loguru

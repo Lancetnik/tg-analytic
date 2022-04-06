@@ -1,0 +1,72 @@
+services:
+  es:
+    image: elasticsearch:7.14.2
+    container_name: es-container
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+      - node.name=es01
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    networks:
+      - elastic
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data_es:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: user
+      POSTGRES_DB: db
+    volumes:
+      - data_pg:/var/lib/postgresql/data
+    ports:
+      - 5433:5432
+    networks:
+      - elastic
+
+  minio:
+    image: 'bitnami/minio:2022.4.1-debian-10-r5'
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      - MINIO_ROOT_USER=user
+      - MINIO_ROOT_PASSWORD=password
+      - MINIO_SCHEME=http
+    volumes:
+     - minio-storage:/data
+    networks:
+      - elastic
+
+  kibana:
+    image: kibana:7.14.2
+    networks:
+      - elastic
+    environment:
+      - ELASTICSEARCH_HOSTS=http://es-container:9200
+    depends_on:
+      - es
+    ports:
+      - 5601:5601
+
+
+volumes:
+  data_es:
+    driver: local
+  data_pg:
+    driver: local
+  minio-storage:
+    driver: local
+
+
+networks:
+  elastic:
+    driver: bridge
