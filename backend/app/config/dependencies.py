@@ -10,12 +10,6 @@ es = AsyncElasticsearch(
     http_auth=(settings.ELASTIC_USER, settings.ELASTIC_PASSWORD)
 )
 
-minio_client = get_session().create_client(
-    's3',
-    endpoint_url=f'http://{settings.MINIO_HOST}:{settings.MINIO_PORT}',
-    aws_access_key_id=settings.MINIO_USER,
-    aws_secret_access_key=settings.MINIO_PASSWORD,
-    use_ssl=False
-)
+minio_session = get_session()
 
 redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)

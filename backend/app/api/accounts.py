@@ -1,6 +1,8 @@
 from typing import Optional
 from fastapi import APIRouter, status, Response, Depends, Body
 
+from propan.config import settings
+
 from db.postgres import database
 from db.postgres.models import TgUserAccount, User
 from db.postgres.accounts import (
@@ -53,6 +55,7 @@ async def confirm_account_handler(
 ):
     account = await get_account(pk=account_id, user=user.id)
     await verify_account(account, code)
+    await settings.CLIENTS.create_account(account)
     return account
 
 

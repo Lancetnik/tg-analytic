@@ -18,7 +18,7 @@ async def parse_message(client, account_id, message):
 
     if message.photo is not None:
         photo = await client.download_media(message=message, file=bytes)
-        name = f'{message.video.id}-{message.id}-{message.date}.jpg'
+        name = f'{message.photo.id}-{message.id}-{message.date}.jpg'
         await put_photo(name, photo)
     
     if message.video is not None:
@@ -54,6 +54,7 @@ async def parse_channel(client, channel_link: str, pause = 0.1):
     account = await get_account(
         api_id=client.api_id, api_hash=client.api_hash
     )
+
     channel = await get_channel(client, channel_link)
 
     async for message in client.iter_messages(channel):
@@ -75,13 +76,10 @@ async def remove_listener(client, channel_link: str):
     remove_channel_listener(client, channel, event_handler)
 
 
-from loguru import logger
 async def send_phone_code(account):
-    client = create_client(account.api_id, account.api_hash)
-    await client.start()
-    
+    client = create_client(account.api_id, account.api_hash)    
     await client.connect()
-    
+
     await client.send_code_request(account.phone)
 
     code_hash = client._phone_code_hash[account.phone]
@@ -91,14 +89,12 @@ async def send_phone_code(account):
         'session': session,
         'code_hash': code_hash
     })
-    logger.debug(await redis.hgetall(account.id))
 
     await client.disconnect()
 
 
 async def verify_account(account, code):
     data = await redis.hgetall(account.id)
-    logger.debug(data)
 
     client = create_client(account.api_id, account.api_hash, session=data['session'])
     await client.connect()
