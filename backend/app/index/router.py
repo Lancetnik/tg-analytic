@@ -10,7 +10,7 @@ INDEX_DIR = Path(__file__).resolve().parent
 TEMPLATE = INDEX_DIR / 'templates' / 'index.html'
 STATIC_DIR = INDEX_DIR / 'static'
 
-html_router = APIRouter()
+html_router = APIRouter(tags=['Frontend'])
 static = StaticFiles(directory=STATIC_DIR)
 
 

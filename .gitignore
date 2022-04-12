@@ -1,0 +1,13 @@
+config.yml
+__pycache__
+env/
+venv/
+*.session
+*.session-journal
+tgdata
+parser.py
+*.egg-info
+build
+dist
+backend/app/index/static
+backend/app/index/templates

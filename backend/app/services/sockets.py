@@ -17,7 +17,6 @@ async def send_to_user(user_id: int, message):
                 'message': message
             })
         ))
-    print(response)
 
 
 async def send_to_group(group: str, message):
@@ -31,4 +30,3 @@ async def send_to_group(group: str, message):
                 'message': message
             })
         ))
-    print(response)

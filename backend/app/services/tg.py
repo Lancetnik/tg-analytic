@@ -1,9 +1,8 @@
 import asyncio
 
 from telethon import events, types
-from loguru import logger
 
-from config.dependencies import redis
+from config.dependencies import redis, logger
 from db.posts import PostSchema
 from db.postgres.accounts import get_account, get_accounts
 from db.minio import put_photo, put_video
@@ -61,7 +60,7 @@ async def parse_channel(client, channel_link: str, pause = 0.1):
         await parse_message(client, account.id, message)
         await asyncio.sleep(pause)
     
-    logger.success(f'Parsing channel {channel_link} done')
+    logger.info(f'Parsing channel {channel_link} done')
 
 
 async def add_listener(client, channel_link: str):
