@@ -95,6 +95,7 @@ services:
       REDIS_HOST: redis
       MINIO_HOST: minio
       ELASTIC_HOST: es
+      WEBSOCKETS_HOST: sockets
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
     ports:
