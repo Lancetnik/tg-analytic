@@ -6,7 +6,6 @@ asyncpg==0.25.0
 fastapi==0.75.1
 uvicorn==0.17.6
 aiobotocore==2.2.0
-
 aioredis==2.0.1
 
 loguru

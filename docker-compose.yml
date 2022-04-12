@@ -21,6 +21,7 @@ services:
 
   postgres:
     image: postgres:14
+    container_name: tg-analytic-pg
     environment:
       POSTGRES_PASSWORD: password
       POSTGRES_USER: user
@@ -34,6 +35,7 @@ services:
 
   minio:
     image: 'bitnami/minio:2022.4.1-debian-10-r5'
+    container_name: tg-analytic-minio
     ports:
       - '9000:9000'
       - '9001:9001'
@@ -42,12 +44,13 @@ services:
       - MINIO_ROOT_PASSWORD=password
       - MINIO_SCHEME=http
     volumes:
-     - minio-storage:/data
+      - minio-storage:/data
     networks:
       - elastic
 
   kibana:
     image: kibana:7.14.2
+    container_name: tg-analytic-kibana
     networks:
       - elastic
     environment:
@@ -59,11 +62,41 @@ services:
 
   redis:
     image: redis:5
+    container_name: tg-analytic-redis
     ports:
       - 6379:6379
     networks:
       - elastic
-
+    
+  redis:
+    image: redis:5
+    container_name: tg-analytic-redis
+    ports:
+      - 6379:6379
+    networks:
+      - elastic
+  
+  app:
+    build: ./backend
+    container_name: tg-analytic
+    volumes:
+      - ./backend/app:/code
+    networks:
+      - elastic
+    depends_on:
+      - redis
+      - es
+      - minio
+      - postgres
+    environment:
+      REDIS_HOST: redis
+      MINIO_HOST: minio
+      ELASTIC_HOST: es
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    ports:
+      - 8000:8000
+    command: venv/bin/uvicorn serve:app --host 0.0.0.0 --port 8000
 
 volumes:
   data_es:
@@ -72,7 +105,6 @@ volumes:
     driver: local
   minio-storage:
     driver: local
-
 
 networks:
   elastic:
