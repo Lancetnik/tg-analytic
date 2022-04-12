@@ -3,6 +3,7 @@ import logging
 import aioredis
 from elasticsearch import AsyncElasticsearch
 from aiobotocore.session import get_session
+from uvicorn.config import logger
 
 from propan.config import settings
 

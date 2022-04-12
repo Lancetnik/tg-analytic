@@ -1,6 +1,7 @@
 aiobotocore==2.2.0
 aioredis==2.0.1
 asyncpg==0.25.0
+celery==5.2.6
 elasticsearch==8.1.2
 fastapi==0.75.1
 grpcio==1.44.0

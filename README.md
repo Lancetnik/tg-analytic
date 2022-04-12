@@ -6,10 +6,11 @@
 Пользователь имеет возможность регистрировать собственные Telegram-аккаунты, от имени которых будет происходить
 сбор данных, подписывать эти аккаунты на конкретные каналы и просматривать собранную информацию.
 
-### Стек технологий
-* Backend - python:Fastapi
-* Fronted - VueJs2:Vuetify
-* Websockets - python:Fastapi + grpcio
+## Стек технологий
+* Backend - **python:Fastapi**
+* Fronted - **VueJs2:Vuetify**
+* Websockets - **python:Fastapi**
+* Взаимодействие между сервисами - **grpc**
 * Постоянные данные, необходимые для авторизации, хранятся в **Postgres**.
 * В качестве хранилища собираемой информации используется **Elasticsearch**.
 * Для хранения фотографий и видеозаписей используется объектное хранилище **Minio**.
@@ -23,6 +24,14 @@
 5) Переходим в `back/app/` и проводим миграции `./init_project.sh`
 6) Запускаем приложение `uvicorn serve:app --host 0.0.0.0 --port 8000`
 * Без сбилженного фронта `http://127.0.0.1:8000/` будет выдавать ошибку
+
+### Celery
+1) В корне запускаем `docker-compose up es postgres redis minio`
+2) В `back/app/config` изменяем `example.yml` на `config.yml` со своими данными для postgres
+3) В `back/` создаем окружение `python3.9 -m venv venv` и активируем его
+4) Ставим dev зависимости `python3.9 -m pip install -r dev_requirements.txt`
+5) Переходим в `back/app/` и проводим миграции `./init_project.sh`
+6) Запускаем приложение `celery -A worker.celery worker -l info`
 
 ### Frontend
 1) Переходим во `front/`, устанавливаем зависимости `npm install`

@@ -1,6 +1,4 @@
-from fastapi import APIRouter, Depends, status, Response, BackgroundTasks
-
-from loguru import logger
+from fastapi import APIRouter, Depends, Response, status
 
 from db.postgres import database
 from db.postgres.models import TgChannelProcess, Status, User
@@ -10,7 +8,8 @@ from db.postgres.processes import (
     get_processes, get_process
 )
 from services.dependencies import get_client, authorize, get_channel
-from services.tg import add_listener, remove_listener, parse_channel
+from services.tg import add_listener, remove_listener
+from worker import parse_channel
 
 
 router = APIRouter()
@@ -50,7 +49,6 @@ async def start_monitoring_handler(
 @database.transaction()
 async def start_history_handler(
     account: int,
-    background_tasks: BackgroundTasks,
     channel = Depends(get_channel),
     client = Depends(get_client),
     pause: float = 0.3
@@ -58,7 +56,7 @@ async def start_history_handler(
     process = await create_process(
         channel_id=channel.id, account_id=account, status=Status.history.value
     )
-    background_tasks.add_task(_history_process, process, client, channel.link, pause)
+    parse_channel.delay(process.id, account, channel.link, pause)
     return process
 
 
@@ -116,16 +114,6 @@ async def get_processes_handler(user: User = Depends(authorize)):
 )
 async def get_process_handler(process_id: int, user: User = Depends(authorize)):
     return await get_process(pk=process_id, account__user=user)
-
-
-async def _history_process(process, client, link, pause):
-    try:
-        await parse_channel(client, link, pause)
-    except Exception as e:
-        logger.error(f'Parsing channel {link} fault with {e}')
-        await process.update(status=Status.error.value)
-    else:
-        await process.update(status=Status.history_done.value)
 
 
 __all__ = ('router',)
