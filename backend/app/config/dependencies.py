@@ -1,3 +1,5 @@
+import logging
+
 import aioredis
 from elasticsearch import AsyncElasticsearch
 from aiobotocore.session import get_session
@@ -13,3 +15,5 @@ es = AsyncElasticsearch(
 minio_session = get_session()
 
 redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+
+logger = logging.getLogger("uvicorn.error")

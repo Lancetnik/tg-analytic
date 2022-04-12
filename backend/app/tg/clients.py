@@ -35,7 +35,7 @@ class TgClientRepository:
             accounts = {}
             default = None
             for account in user.accounts:
-                if account.activated is True:
+                if account.session is not None:
                     if account.default is True and default is None:
                         default = account.id
 

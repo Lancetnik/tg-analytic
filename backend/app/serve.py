@@ -12,9 +12,11 @@ from services.tg import add_listener
 from tg.clients import TgClientRepository
 
 from api import api_router
+from index.router import html_router, static
 
 
 app = FastAPI()
+app.mount("/static", static, name="static")
 
 
 @app.on_event("startup")
@@ -36,4 +38,5 @@ async def shutdown() -> None:
     await es.close()
 
 
+app.include_router(html_router)
 app.include_router(api_router)

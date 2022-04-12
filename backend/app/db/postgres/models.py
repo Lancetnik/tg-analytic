@@ -38,7 +38,6 @@ class TgUserAccount(ormar.Model):
         User, nullable=False, related_name='accounts'
     )
     default: bool = ormar.Boolean(default=False)
-    activated: bool = ormar.Boolean(default=False)
 
     def __hash__(self):
         return hash(self.id)

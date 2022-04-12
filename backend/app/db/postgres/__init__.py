@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
 from propan.config import settings
-from propan.logger import loguru as logger
+from config.dependencies import logger
 
 
 database = databases.Database(settings.DATABASE_URL)
@@ -31,7 +31,7 @@ async def connect_db(rebuild: bool = False):
         await asyncio.sleep(3)
         asyncio.ensure_future(connect_db())
     else:
-        logger.success("DB connected")
+        logger.info(f"DB {settings.POSTGRES_HOST}:{settings.POSTGRES_PORT} connected")
 
 
 async def close_db():

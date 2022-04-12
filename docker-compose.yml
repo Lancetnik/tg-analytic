@@ -9,7 +9,7 @@ services:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     networks:
-      - elastic
+      - app-net
     ulimits:
       memlock:
         soft: -1
@@ -31,7 +31,7 @@ services:
     ports:
       - 5433:5432
     networks:
-      - elastic
+      - app-net
 
   minio:
     image: 'bitnami/minio:2022.4.1-debian-10-r5'
@@ -46,13 +46,13 @@ services:
     volumes:
       - minio-storage:/data
     networks:
-      - elastic
+      - app-net
 
   kibana:
     image: kibana:7.14.2
     container_name: tg-analytic-kibana
     networks:
-      - elastic
+      - app-net
     environment:
       - ELASTICSEARCH_HOSTS=http://es-container:9200
     depends_on:
@@ -66,23 +66,26 @@ services:
     ports:
       - 6379:6379
     networks:
-      - elastic
-    
-  redis:
-    image: redis:5
-    container_name: tg-analytic-redis
-    ports:
-      - 6379:6379
+      - app-net
+
+  sockets:
+    build: ./websockets
+    volumes:
+      - ./websockets/app:/code
     networks:
-      - elastic
-  
+      - app-net
+    ports:
+      - 8001:8001
+      - 8002:8002
+    command: venv/bin/uvicorn serve:app --host 0.0.0.0 --port 8001
+
   app:
     build: ./backend
     container_name: tg-analytic
     volumes:
       - ./backend/app:/code
     networks:
-      - elastic
+      - app-net
     depends_on:
       - redis
       - es
@@ -107,5 +110,5 @@ volumes:
     driver: local
 
 networks:
-  elastic:
+  app-net:
     driver: bridge

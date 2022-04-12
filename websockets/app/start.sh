@@ -1,0 +1,1 @@
+uvicorn serve:app --reload --port 8001

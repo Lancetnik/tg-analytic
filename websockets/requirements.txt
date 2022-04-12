@@ -1,0 +1,5 @@
+fastapi==0.75.1
+grpcio==1.44.0
+grpcio-tools==1.44.0
+websockets==10.2
+uvicorn==0.17.6

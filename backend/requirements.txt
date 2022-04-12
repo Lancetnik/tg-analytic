@@ -1,11 +1,13 @@
-telethon==1.24.0
-propan==0.0.3.7
-elasticsearch==8.1.2
-ormar==0.10.24
-asyncpg==0.25.0
-fastapi==0.75.1
-uvicorn==0.17.6
 aiobotocore==2.2.0
 aioredis==2.0.1
+asyncpg==0.25.0
+elasticsearch==8.1.2
+fastapi==0.75.1
+grpcio==1.44.0
+grpcio-tools==1.44.0
+ormar==0.10.24
+propan==0.0.3.7
+telethon==1.24.0
+uvicorn==0.17.6
 
 loguru

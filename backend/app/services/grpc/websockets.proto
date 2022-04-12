@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package websockets;
+
+service Sender {
+  rpc SendMessage (Message) returns (Reply) {}
+}
+
+message Message {
+  string message = 1;
+}
+
+message Reply {
+  string message = 1;
+}

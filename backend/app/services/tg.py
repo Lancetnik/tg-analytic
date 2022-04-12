@@ -5,7 +5,7 @@ from loguru import logger
 
 from config.dependencies import redis
 from db.posts import PostSchema
-from db.postgres.accounts import get_account
+from db.postgres.accounts import get_account, get_accounts
 from db.minio import put_photo, put_video
 from tg.methods import (
     add_channel_listener, remove_channel_listener,
@@ -101,5 +101,15 @@ async def verify_account(account, code):
 
     await client.sign_in(phone=account.phone, code=code, phone_code_hash=data['code_hash'])
 
-    await account.update(session=client.session.save(), activated=True)
+    if not await get_accounts(default=True, user=account.user):
+        update_data = {
+            'session': client.session.save(),
+            'default': True
+        }
+    else:
+        update_data = {
+            'session': client.session.save()
+        }
+    
+    await account.update(**update_data)
     await client.disconnect()
