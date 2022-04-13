@@ -33,18 +33,18 @@ async def delete_account(**params) -> bool:
     else:
         await account.delete()
         await settings.CLIENTS.delete_account(
-            user_id=account.user.id, account_id=account.id
+            user_id=account.user_id, account_id=account.id
         )
         return True
 
 
 @database.transaction()
-async def set_default(pk, user, **params):
-    account = await get_account(pk=pk, user=user, **params)
-    await TgUserAccount.objects.filter(user=user).update(default=False)
+async def set_default(pk, user_id, **params):
+    account = await get_account(pk=pk, user_id=user_id, **params)
+    await TgUserAccount.objects.filter(user_id=user_id).update(default=False)
     await account.update(default=True)
 
-    settings.CLIENTS.set_default(user_id=user, account_id=pk)
+    settings.CLIENTS.set_default(user_id=user_id, account_id=pk)
     return account
 
 

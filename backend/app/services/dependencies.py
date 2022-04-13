@@ -6,19 +6,18 @@ from fastapi.exceptions import HTTPException
 from propan.config import settings
 
 from config.dependencies import minio_session
-from db.postgres.models import User
 from db.postgres.channels import get_channel_or_none
 from db.posts.schemas import ProcessStatus
 
 from .schemas import Pagination
 
 
-async def authorize():
-    return await User.objects.first()
+async def authorize() -> 'user_id':
+    return 1
 
 
-async def default_client(user: User = Depends(authorize)) -> Optional['client']:
-    client = settings.CLIENTS.get_default(user.id)
+async def default_client(user_id: int = Depends(authorize)) -> Optional['client']:
+    client = settings.CLIENTS.get_default(user_id)
     if client is None:
         raise HTTPException(status_code=401, detail="You have no default telegram account")
     else:
@@ -27,9 +26,9 @@ async def default_client(user: User = Depends(authorize)) -> Optional['client']:
 
 async def get_client(
     account: Optional[int],
-    user: User = Depends(authorize)
+    user_id: int = Depends(authorize)
 ) -> Optional['client']:
-    client = settings.CLIENTS.get_client(user_id=user.id, account_id=account)
+    client = settings.CLIENTS.get_client(user_id=user_id, account_id=account)
     if client is None:
         raise HTTPException(status_code=404, detail="There no such telegram account")
     else:
@@ -44,16 +43,16 @@ async def get_channel(channel: int):
         return channel
 
 
-async def get_task(task_id: str, user: User = Depends(authorize)):
-    task = await ProcessStatus.get(user.id, task_id)
+async def get_task(task_id: str, user_id: int = Depends(authorize)):
+    task = await ProcessStatus.get(user_id, task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="There no such task")
     else:
         return task
 
 
-async def get_client_by_task(task = Depends(get_task), user: User = Depends(authorize)):
-    return await get_client(account=task.account_id, user=user)
+async def get_client_by_task(task = Depends(get_task), user_id: int = Depends(authorize)):
+    return await get_client(account=task.account_id, user_id=user_id)
 
 
 async def get_task_channel(task = Depends(get_task)):

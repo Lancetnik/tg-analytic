@@ -4,7 +4,7 @@ from fastapi import APIRouter, status, Response, Depends, Body
 from propan.config import settings
 
 from db.postgres import database
-from db.postgres.models import TgUserAccount, User
+from db.postgres.models import TgUserAccount
 from db.postgres.accounts import (
     get_account, get_accounts,
     delete_account, set_default,
@@ -31,10 +31,10 @@ async def create_account_handler(
     api_id: int = Body(...),
     api_hash: str = Body(...),
     phone: str = Body(...),
-    user: User = Depends(authorize)
+    user_id: int = Depends(authorize)
 ):
     account = await create_account(
-        user=user.id, phone=phone,
+        user_id=user_id, phone=phone,
         api_id=api_id, api_hash=api_hash
     )
     await send_phone_code(account)
@@ -51,9 +51,9 @@ async def create_account_handler(
 async def confirm_account_handler(
     account_id: int,
     code: int,
-    user: User = Depends(authorize)
+    user_id: int = Depends(authorize)
 ):
-    account = await get_account(pk=account_id, user=user.id)
+    account = await get_account(pk=account_id, user_id=user_id)
     await verify_account(account, code)
     await settings.CLIENTS.create_account(account)
     return account
@@ -66,17 +66,17 @@ async def confirm_account_handler(
 )
 async def account_set_default_handler(
     account_id: int,
-    user: User = Depends(authorize)
+    user_id: int = Depends(authorize)
 ):
-    return await set_default(pk=account_id, user=user.id)
+    return await set_default(pk=account_id, user_id=user_id)
 
 
 @router.get(
     "",
     response_model=list[BaseAccountResponse]
 )
-async def get_accounts_handler(user: User = Depends(authorize)):
-    return await get_accounts(user=user.id)
+async def get_accounts_handler(user_id: int = Depends(authorize)):
+    return await get_accounts(user_id=user_id)
 
 
 @router.get(
@@ -85,9 +85,9 @@ async def get_accounts_handler(user: User = Depends(authorize)):
 )
 async def get_account_handler(
     account_id: int,
-    user: User = Depends(authorize)
+    user_id: int = Depends(authorize)
 ):
-    return await get_account(pk=account_id, user=user.id)
+    return await get_account(pk=account_id, user_id=user_id)
 
 
 @router.delete(
@@ -97,9 +97,9 @@ async def get_account_handler(
 )
 async def delete_account_handler(
     account_id: int,
-    user: User = Depends(authorize)
+    user_id: int = Depends(authorize)
 ):
-    await delete_account(pk=account_id, user=user.id)
+    await delete_account(pk=account_id, user_id=user_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

@@ -1,7 +1,7 @@
 from typing import Optional
 
-from db.postgres.models import User, TgUserAccount
-from db.postgres.users import get_users_with_accounts
+from db.postgres.models import TgUserAccount
+from db.postgres.accounts import get_accounts
 
 from .methods import start_client
 
@@ -31,26 +31,24 @@ class TgClientRepository:
     async def create(cls):
         clients = {}
 
-        for user in await get_users_with_accounts():
-            accounts = {}
-            default = None
-            for account in user.accounts:
-                if account.session is not None:
-                    if account.default is True and default is None:
-                        default = account.id
-
-                    client = await start_client(
-                        account.api_id, account.api_hash, account.session
-                    )
-                    accounts[account.id] = client
-
-                    if account.session is None:
-                        await account.update(session=client.session.save()) 
-
-            clients[user.id] = {
-                DEFAULT: default,
-                CLIENTS: accounts
+        for account in await get_accounts():
+            clients[account.user_id] = {
+                DEFAULT: None,
+                CLIENTS: {}
             }
+
+            if account.session is not None:
+                if account.default is True and \
+                clients[account.user_id].get(DEFAULT) is None:
+                    clients[account.user_id][DEFAULT] = account.id
+
+                client = await start_client(
+                    account.api_id, account.api_hash, account.session
+                )
+                clients[account.user_id][CLIENTS][account.id] = client
+
+                if account.session is None:
+                    await account.update(session=client.session.save()) 
 
         return cls(clients)
 
@@ -83,12 +81,12 @@ class TgClientRepository:
 
 
     async def create_account(self, account: TgUserAccount, phone: Optional[str] = None):
-        user_id = account.user.id
+        user_id = account.user_id
         user = self._clients.get(user_id, {})
         clients = user.get(CLIENTS, {})
         clients[account.id] = await start_client(
             account.api_id, account.api_hash, account.session, phone
         )
         user[CLIENTS] = clients
-        self._clients[account.user.id] = user
+        self._clients[account.user_id] = user
         return clients[account.id]

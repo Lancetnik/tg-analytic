@@ -19,7 +19,7 @@ async def parse_channel(self, account_id, channel_id, pause=0.1):
 
     task = await ProcessStatus(
         account_id=account_id, channel_id=channel.id,
-        user_id=acc.user.id, status=Status.history.value,
+        user_id=acc.user_id, status=Status.history.value,
         task_id=self.request.id
     ).save()
 
@@ -46,8 +46,8 @@ async def parse_channel(self, account_id, channel_id, pause=0.1):
         await client.disconnect()
 
 
-def kill_task(task_id: str):
+def kill_task(task_id: str, wait: bool = True):
     task = AbortableAsyncResult(task_id)
     task.abort()
-    task.get()
-    return
+    if wait is True:
+        task.get()

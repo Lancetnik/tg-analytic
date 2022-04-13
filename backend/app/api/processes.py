@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Response, status
 
-from db.postgres.models import User
 from db.posts.schemas import ProcessStatus, Status
 from services.dependencies import (
     get_client, authorize, get_channel,
@@ -17,8 +16,8 @@ router = APIRouter()
     "",
     response_model=list[ProcessStatus]
 )
-async def get_processes_handler(user: User = Depends(authorize)):
-    return await ProcessStatus.list(user_id=user.id)
+async def get_processes_handler(user_id: int = Depends(authorize)):
+    return await ProcessStatus.list(user_id=user_id)
 
 
 @router.get(
@@ -27,9 +26,9 @@ async def get_processes_handler(user: User = Depends(authorize)):
 )
 async def check_task_state(
     task_id: str,
-    user: User = Depends(authorize),
+    user_id: int = Depends(authorize),
 ):
-    return await ProcessStatus.get(user_id=user.id, task_id=task_id)
+    return await ProcessStatus.get(user_id=user_id, task_id=task_id)
 
 
 @router.post(
@@ -41,10 +40,10 @@ async def start_monitoring_handler(
     account: int,
     client = Depends(get_client),
     channel = Depends(get_channel),
-    user: User = Depends(authorize)
+    user_id: int = Depends(authorize)
 ):
     process = await ProcessStatus(
-        account_id=account, user_id=user.id,
+        account_id=account, user_id=user_id,
         channel_id=channel.id, status=Status.monitoring.value
     ).save()
     await add_listener(client, channel.link)
@@ -60,12 +59,12 @@ async def start_history_handler(
     account: int,
     channel = Depends(get_channel),
     client = Depends(get_client),
-    user: User = Depends(authorize),
+    user_id: int = Depends(authorize),
     pause: float = 0.3
 ):
     process = ProcessStatus(
         account_id=account, channel_id=channel.id,
-        user_id=user.id, status=Status.history.value
+        user_id=user_id, status=Status.history.value
     )
     task = parse_channel.delay(account, channel.id, pause)
     process.task_id = task.id
@@ -80,8 +79,7 @@ async def toggle_process_handler(
     status: Status,
     task: ProcessStatus = Depends(get_task),
     client = Depends(get_client_by_task),
-    channel = Depends(get_task_channel),
-    user: User = Depends(authorize)
+    channel = Depends(get_task_channel)
 ):
     process = task
 

@@ -109,8 +109,8 @@ async def verify_account(account, code):
 
     await client.sign_in(phone=account.phone, code=code, phone_code_hash=data['code_hash'])
 
-    if not await get_accounts(default=True, user=account.user):
-        await set_default(account.id, account.user.id)
+    if not await get_accounts(default=True, user_id=account.user_id):
+        await set_default(pk=account.id, user_id=account.user_id)
 
     await account.update(session=client.session.save())
     await client.disconnect()

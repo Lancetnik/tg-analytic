@@ -12,17 +12,6 @@ class BaseMeta(ormar.ModelMeta):
     database = database
 
 
-class User(ormar.Model):
-    class Meta(BaseMeta):
-        tablename = "users"
-
-    id: int = ormar.Integer(primary_key=True)
-    name: str = ormar.Text()
-
-    def __hash__(self):
-        return hash(self.id)
-
-
 class TgUserAccount(ormar.Model):
     class Meta(BaseMeta):
         tablename = "tg_account"
@@ -34,9 +23,7 @@ class TgUserAccount(ormar.Model):
     api_id: int = ormar.Integer(unique=True)
     api_hash: str = ormar.Text(length=32, unique=True)
 
-    user: User = ormar.ForeignKey(
-        User, nullable=False, related_name='accounts'
-    )
+    user_id: int = ormar.Integer()
     default: bool = ormar.Boolean(default=False)
 
     def __hash__(self):

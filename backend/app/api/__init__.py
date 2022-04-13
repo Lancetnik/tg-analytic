@@ -1,10 +1,9 @@
 from fastapi import APIRouter
 
-from . import users, posts, accounts, channels, processes
+from . import posts, accounts, channels, processes
 
 
 api_router = APIRouter()
-api_router.include_router(users.router, prefix="/user", tags=["Users"])
 api_router.include_router(posts.router, prefix="/post", tags=["Posts"])
 api_router.include_router(accounts.router, prefix="/account", tags=["Accounts"])
 api_router.include_router(channels.router, prefix="/channel", tags=["Channels"])
