@@ -116,6 +116,9 @@ class ProcessStatus(BaseModel):
         await methods.save_status(self)
         return self
 
+    async def delete(self):
+        return await methods.delete_process(self.task_id)
+
     @classmethod
     async def get_or_create(cls,
         account_id: int, user_id: int,

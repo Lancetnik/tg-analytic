@@ -5,7 +5,8 @@ from telethon import events, types
 
 from config.dependencies import redis, logger
 from db.posts import PostSchema
-from db.postgres.accounts import get_account, get_accounts
+from db.postgres import database
+from db.postgres.accounts import get_account, get_accounts, set_default
 from db.minio import put_photo, put_video
 from tg.methods import (
     add_channel_listener, remove_channel_listener,
@@ -48,7 +49,7 @@ async def event_handler(event: events.NewMessage):
     )
 
 
-async def parse_channel(client, channel_link: str, pause = 0.1):
+async def parse_channel(client, channel_link: str, pause = 0):
     logger.info(f'Parsing channel {channel_link} started')
 
     account = await get_account(
@@ -58,7 +59,7 @@ async def parse_channel(client, channel_link: str, pause = 0.1):
     channel = await get_channel(client, channel_link)
 
     async for message in client.iter_messages(channel):
-        await parse_message(client, account.id, message)
+        yield message
         await asyncio.sleep(pause)
     
     logger.info(f'Parsing channel {channel_link} done')
@@ -99,6 +100,7 @@ async def send_phone_code(account):
     await client.disconnect()
 
 
+@database.transaction()
 async def verify_account(account, code):
     data = await redis.hgetall(account.id)
 
@@ -108,14 +110,7 @@ async def verify_account(account, code):
     await client.sign_in(phone=account.phone, code=code, phone_code_hash=data['code_hash'])
 
     if not await get_accounts(default=True, user=account.user):
-        update_data = {
-            'session': client.session.save(),
-            'default': True
-        }
-    else:
-        update_data = {
-            'session': client.session.save()
-        }
-    
-    await account.update(**update_data)
+        await set_default(account.id, account.user.id)
+
+    await account.update(session=client.session.save())
     await client.disconnect()

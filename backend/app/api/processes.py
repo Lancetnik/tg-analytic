@@ -7,7 +7,7 @@ from services.dependencies import (
     get_task, get_client_by_task, get_task_channel
 )
 from services.tg import add_listener, remove_listener
-from worker import parse_channel
+from worker import parse_channel, kill_task
 
 
 router = APIRouter()
@@ -85,6 +85,9 @@ async def toggle_process_handler(
 ):
     process = task
 
+    if process.status == Status.history and status != Status.history:
+        kill_task(process.task_id)
+
     if status == Status.monitoring_stopped:
         process = await task.update(status=status.value)
         await remove_listener(client, channel.link)
@@ -94,6 +97,10 @@ async def toggle_process_handler(
         await add_listener(client, channel.link)
 
     elif status == Status.history:
+        if process.status == Status.history_stopped \
+        or process.status == Status.error:
+            await process.delete()
+
         task = parse_channel.delay(task.account_id, channel.id)
         process = await process.update(status=status.value, task_id=task.id)
 

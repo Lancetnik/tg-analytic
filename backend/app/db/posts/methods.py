@@ -89,6 +89,10 @@ async def find_process(user_id, account_id, channel_id, status) -> 'ProcessStatu
     ))['hits']['hits'][0]
 
 
+async def delete_process(task_id: str):
+    await es.delete(index=settings.PROCESSES, id=task_id)
+
+
 async def get_processes(user_id=None, status=None, **kwargs) -> list['ProcessStatus']:
     must = []
     if user_id: must.append({"match": { "user_id": user_id }})
