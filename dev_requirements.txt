@@ -1,4 +1,0 @@
--r requirements.txt
-
-autopep8
-python-lsp-server
