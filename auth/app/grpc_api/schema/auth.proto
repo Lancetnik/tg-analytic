@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package auth;
+
+service Checker {
+  rpc CheckToken (Token) returns (Reply) {}
+}
+
+message Token {
+  string token = 1;
+}
+
+message Reply {
+  int64 user_id = 1;
+}

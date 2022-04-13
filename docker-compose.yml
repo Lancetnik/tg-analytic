@@ -78,6 +78,19 @@ services:
       - 8001:8001
       - 8002:8002
     command: venv/bin/uvicorn serve:app --host 0.0.0.0 --port 8001
+  
+  auth:
+    build: ./auth
+    volumes:
+      - ./auth/app:/code
+    networks:
+      - app-net
+    depends_on:
+      - postgres
+    ports:
+      - 8003:8003
+      - 8004:8004
+    command: venv/bin/uvicorn serve:app --host 0.0.0.0 --port 8003
 
   app:
     build: ./backend
@@ -96,6 +109,7 @@ services:
       MINIO_HOST: minio
       ELASTIC_HOST: es
       WEBSOCKETS_HOST: sockets
+      AUTH_HOST: auth
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
     ports:
@@ -119,6 +133,7 @@ services:
       MINIO_HOST: minio
       ELASTIC_HOST: es
       WEBSOCKETS_HOST: sockets
+      AUTH_HOST: auth
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
     command: venv/bin/celery -A worker.celery worker -l info

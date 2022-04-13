@@ -1,8 +1,4 @@
-from datetime import datetime
-from enum import Enum
-
 import ormar
-from sqlalchemy.sql import func
 
 from . import metadata, database
 

@@ -150,9 +150,10 @@ class ProcessStatus(BaseModel):
             return process
         else:
             return None
-    
+
     async def update(self, **params):
         data = self.dict()
+        params['updated'] = datetime.utcnow()
         data.update(params)
         return await ProcessStatus(**data).save()
 

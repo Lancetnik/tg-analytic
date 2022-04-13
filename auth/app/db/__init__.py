@@ -13,6 +13,7 @@ metadata = sqlalchemy.MetaData()
 engine = create_async_engine(settings.DATABASE_URL, echo=True)
 
 
+
 async def connect_db(rebuild: bool = False):
     if rebuild is True:
         async with engine.begin() as conn:

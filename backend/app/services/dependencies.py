@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import Depends
+from fastapi import Depends, Header
 from fastapi.exceptions import HTTPException
 
 from propan.config import settings
@@ -10,10 +10,20 @@ from db.postgres.channels import get_channel_or_none
 from db.posts.schemas import ProcessStatus
 
 from .schemas import Pagination
+from .auth import check_token
 
 
-async def authorize() -> 'user_id':
-    return 1
+async def authorize(authorization: str = Header(...)) -> 'user_id':
+    try:
+        token = authorization.split()[-1]
+    except Exception:
+        raise HTTPException(status_code=401)
+
+    user_id = await check_token(token)
+    if user_id == 0:
+        raise HTTPException(status_code=401)
+    else:
+        return user_id
 
 
 async def default_client(user_id: int = Depends(authorize)) -> Optional['client']:
