@@ -104,10 +104,13 @@ class ProcessStatus(BaseModel):
     account_id: int
     user_id: int
     channel_id: int
-    status: str
+    status: Status
 
     task_id: str = Field(default_factory=lambda: str(uuid4()))
     updated: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:  
+        use_enum_values = True
 
     async def save(self) -> 'ProcessStatus':
         await methods.save_status(self)

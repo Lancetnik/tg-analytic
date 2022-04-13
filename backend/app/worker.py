@@ -34,10 +34,3 @@ async def parse_channel(self, account_id, channel_id, pause=0.1):
     finally:
         await client.disconnect()
     raise Ignore()
-
-
-def check_task_state(task_id: str, user_id: int):
-    task = AsyncResult(task_id)
-    if task and task.info and user_id == task.info['owner']:
-        return task.state
-    raise HTTPException(status_code=404)
