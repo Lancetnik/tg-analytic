@@ -1,7 +1,9 @@
 from datetime import datetime
+from enum import Enum
 from typing import Optional
+from uuid import uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import methods
 
@@ -87,3 +89,72 @@ class PaginatedPosts(BaseModel):
     previous: Optional[str]
     count: int
     data: list[PostSchema]
+
+
+class Status(str, Enum):
+    monitoring = "MONITORING"
+    history = "PARSING"
+    monitoring_stopped = "MONITORING-STOPPED"
+    history_stopped = "PARSING-STOPPED"
+    history_done= "PARSING-DONE"
+    error = "ERROR"
+
+
+class ProcessStatus(BaseModel):
+    account_id: int
+    user_id: int
+    channel_id: int
+    status: str
+
+    task_id: str = Field(default_factory=lambda: str(uuid4()))
+    updated: datetime = Field(default_factory=datetime.utcnow)
+
+    async def save(self) -> 'ProcessStatus':
+        await methods.save_status(self)
+        return self
+
+    @classmethod
+    async def get_or_create(cls,
+        account_id: int, user_id: int,
+        channel_id: int, status: str
+    ) -> ('ProcessStatus', bool):
+        post = await methods.find_process(
+            account_id=account_id,
+            user_id=user_id,
+            channel_id=channel_id,
+            status=status
+        )
+        if post is None:
+            return await self.save(), True
+        return cls.from_elastic(post), False
+
+    @classmethod
+    def from_elastic(cls, es_item: dict) -> 'ProcessStatus':
+        return cls(**es_item['_source'])
+    
+    @classmethod
+    def list_from_elastic(cls, es_items: dict) -> list['ProcessStatus']:
+        return list(map(cls.from_elastic, es_items['hits']['hits']))
+    
+    @classmethod
+    async def get(cls, user_id: str, task_id: str) -> 'ProcessStatus':
+        post = await methods.get_process(task_id)
+        process = cls.from_elastic(post)
+        if user_id == process.user_id:
+            return process
+        else:
+            return None
+    
+    async def update(self, **params):
+        data = self.dict()
+        data.update(params)
+        return await ProcessStatus(**data).save()
+
+    @classmethod
+    async def list(cls, **kwargs) -> list['ProcessStatus']:
+        request = await methods.get_processes(**kwargs)
+        return cls.list_from_elastic(request)
+
+    @classmethod
+    async def get_monitorings(cls):
+        return await cls.list(status=Status.monitoring.value)

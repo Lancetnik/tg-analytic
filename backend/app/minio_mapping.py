@@ -1,16 +1,19 @@
+import asyncio
+
 from propan.config import settings
 
-from config.dependencies import minio_client
+from services.dependencies import minio
 
 
-def check_bucket(bucket: str):
-    if not minio_client.bucket_exists(bucket):
-        minio_client.make_bucket(bucket)
-        print(f"Bucket '{bucket}' created")
-    else:
-        print(f"Bucket '{bucket}' already exists")
+async def check_bucket(bucket_name: str):
+    async with minio() as client:
+        if bucket_name not in {i['Name'] for i in (await client.list_buckets())['Buckets']}:
+            await client.create_bucket(Bucket=bucket_name)
+            print(f'Bucket `{bucket_name}` created!')
+        else:
+            print(f'Bucket `{bucket_name}` already exists!')
 
 
 if __name__ == '__main__':
     for i in [settings.PHOTO_BUCKET, settings.VIDEO_BUCKET]:
-        check_bucket(i)
+        asyncio.run(check_bucket(i))

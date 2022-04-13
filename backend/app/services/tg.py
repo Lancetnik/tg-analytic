@@ -1,5 +1,6 @@
 import asyncio
 
+import click
 from telethon import events, types
 
 from config.dependencies import redis, logger
@@ -64,13 +65,19 @@ async def parse_channel(client, channel_link: str, pause = 0.1):
 
 
 async def add_listener(client, channel_link: str):
-    logger.info(f'Monitoring at channel {channel_link} started')
+    message =  "Monitoring at channel %s %s"
+    color_message = f"Monitoring at channel {click.style('%s', bold=True)} {click.style('%s', fg='green')}"
+    logger.info(message, channel_link, "started", extra={"color_message": color_message})
+
     channel = await get_channel(client, channel_link)
     add_channel_listener(client, channel, event_handler)
 
 
 async def remove_listener(client, channel_link: str):
-    logger.info(f'Monitoring at channel {channel_link} stopped')
+    message =  "Monitoring at channel %s %s"
+    color_message = f"Monitoring at channel {click.style('%s', bold=True)} {click.style('%s', fg='red')}"
+    logger.info(message, channel_link, "stopped", extra={"color_message": color_message})
+
     channel = await get_channel(client, channel_link)
     remove_channel_listener(client, channel, event_handler)
 

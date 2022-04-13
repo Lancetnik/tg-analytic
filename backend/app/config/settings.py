@@ -2,6 +2,7 @@ from propan.config import settings
 
 
 POSTS = 'posts'
+PROCESSES = "processes"
 
 ELASTIC_URL = f'{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:{settings.ELASTIC_PORT}'
 

@@ -8,6 +8,7 @@ from propan.config import settings
 from config.dependencies import minio_session
 from db.postgres.models import User
 from db.postgres.channels import get_channel_or_none
+from db.posts.schemas import ProcessStatus
 
 from .schemas import Pagination
 
@@ -41,6 +42,22 @@ async def get_channel(channel: int):
         raise HTTPException(status_code=404, detail="There no such channel")
     else:
         return channel
+
+
+async def get_task(task_id: str, user: User = Depends(authorize)):
+    task = await ProcessStatus.get(user.id, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="There no such task")
+    else:
+        return task
+
+
+async def get_client_by_task(task = Depends(get_task), user: User = Depends(authorize)):
+    return await get_client(account=task.account_id, user=user)
+
+
+async def get_task_channel(task = Depends(get_task)):
+    return await get_channel(task.channel_id)
 
 
 async def paginate(page: int = 1, size: int = 10):

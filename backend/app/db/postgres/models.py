@@ -53,35 +53,3 @@ class TgChannel(ormar.Model):
 
     def __hash__(self):
         return hash(self.id)
-
-
-class Status(str, Enum):
-    monitoring = "MONITORING"
-    history = "PARSING"
-    monitoring_stopped = "MONITORING-STOPPED"
-    history_stopped = "PARSING-STOPPED"
-    history_done= "PARSING-DONE"
-    error = "ERROR"
-
-
-class TgChannelProcess(ormar.Model):
-    class Meta(BaseMeta):
-        tablename = "channel_process"
-        constraints = [ormar.UniqueColumns("channel", "account", "status")]
-
-    id: int = ormar.Integer(primary_key=True)
-    channel: TgChannel = ormar.ForeignKey(
-        TgChannel, nullable=False, related_name='processes'
-    )
-    account: TgUserAccount = ormar.ForeignKey(
-        TgUserAccount, nullable=False, related_name='processes'
-    )
-    created: datetime = ormar.DateTime(default=lambda: datetime.now())
-    changed: datetime = ormar.DateTime(default=lambda: datetime.now())
-    status: str = ormar.Text(choices=tuple(i.value for i in  Status))
-
-    async def update(self, **params):
-        await super().update(**params, changed=datetime.now())
-
-    def __hash__(self):
-        return hash(self.id)

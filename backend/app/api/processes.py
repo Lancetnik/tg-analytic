@@ -1,119 +1,103 @@
 from fastapi import APIRouter, Depends, Response, status
 
-from db.postgres import database
-from db.postgres.models import TgChannelProcess, Status, User
-from db.postgres.channels import get_channel
-from db.postgres.processes import (
-    create_process, delete_process,
-    get_processes, get_process
+from db.postgres.models import User
+from db.posts.schemas import ProcessStatus, Status
+from services.dependencies import (
+    get_client, authorize, get_channel,
+    get_task, get_client_by_task, get_task_channel
 )
-from services.dependencies import get_client, authorize, get_channel
 from services.tg import add_listener, remove_listener
 from worker import parse_channel
 
 
 router = APIRouter()
 
-BaseProcessResponse = TgChannelProcess.get_pydantic(include={
-    "id": ...,
-    "channel": {"id"},
-    "account": {"id"},
-    "last_change": ...,
-    "status": ...
-})
+
+@router.get(
+    "",
+    response_model=list[ProcessStatus]
+)
+async def get_processes_handler(user: User = Depends(authorize)):
+    return await ProcessStatus.list(user_id=user.id)
+
+
+@router.get(
+    "/{task_id}",
+    response_model=ProcessStatus
+)
+async def check_task_state(
+    task_id: str,
+    user: User = Depends(authorize),
+):
+    return await ProcessStatus.get(user_id=user.id, task_id=task_id)
 
 
 @router.post(
     "",
-    response_model=BaseProcessResponse,
+    response_model=ProcessStatus,
     status_code=status.HTTP_201_CREATED
 )
-@database.transaction()
 async def start_monitoring_handler(
     account: int,
+    client = Depends(get_client),
     channel = Depends(get_channel),
-    client = Depends(get_client)
+    user: User = Depends(authorize)
 ):
-    process = await create_process(
-        channel_id=channel.id, account_id=account, status=Status.monitoring.value
-    )
+    process = await ProcessStatus(
+        account_id=account, user_id=user.id,
+        channel_id=channel.id, status=Status.monitoring.value
+    ).save()
     await add_listener(client, channel.link)
     return process
 
 
 @router.post(
     "/history",
-    response_model=BaseProcessResponse,
+    response_model=ProcessStatus,
     status_code=status.HTTP_201_CREATED
 )
-@database.transaction()
 async def start_history_handler(
     account: int,
     channel = Depends(get_channel),
     client = Depends(get_client),
+    user: User = Depends(authorize),
     pause: float = 0.3
 ):
-    process = await create_process(
-        channel_id=channel.id, account_id=account, status=Status.history.value
+    process = ProcessStatus(
+        account_id=account, channel_id=channel.id,
+        user_id=user.id, status=Status.history.value
     )
-    parse_channel.delay(process.id, account, channel.link, pause)
+    task = parse_channel.delay(account, channel.id, pause)
+    process.task_id = task.id
     return process
-
-
-@router.delete(
-    "/{process_id}",
-    response_model=BaseProcessResponse,
-    responses={204: {"model": None}},
-)
-@database.transaction()
-async def delete_process_handler(process_id: int, user: User = Depends(authorize)):
-    process = await delete_process(pk=process_id, account__user=user)
-
-    if process is not None and process.status == Status.monitoring.value:
-        channel = await get_channel(process.channel)
-        client = await get_client(account=process.account.id, user=user)
-        await remove_listener(client, channel.link)
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.patch(
     "/toggle/{process_id}",
-    response_model=BaseProcessResponse
+    response_model=ProcessStatus
 )
-@database.transaction()
 async def toggle_process_handler(
-    process_id: int,
     status: Status,
-    user: User = Depends(authorize),
+    task: ProcessStatus = Depends(get_task),
+    client = Depends(get_client_by_task),
+    channel = Depends(get_task_channel),
+    user: User = Depends(authorize)
 ):
-    process = await get_process(pk=process_id, account__user=user)
-    await process.update(status=status.value)
+    process = task
 
-    channel = await get_channel(process.channel)
-    client = await get_client(account=process.account.id, user=user)
     if status == Status.monitoring_stopped:
+        process = await task.update(status=status.value)
         await remove_listener(client, channel.link)
+
     elif status == Status.monitoring:
+        process = await task.update(status=status.value)
         await add_listener(client, channel.link)
 
+    elif status == Status.history:
+        task = parse_channel.delay(task.account_id, channel.id)
+        process = await process.update(status=status.value, task_id=task.id)
+
     return process
-
-
-@router.get(
-    "",
-    response_model=list[BaseProcessResponse]
-)
-async def get_processes_handler(user: User = Depends(authorize)):
-    return await get_processes(account__user=user)
-
-
-@router.get(
-    "/{process_id}",
-    response_model=BaseProcessResponse
-)
-async def get_process_handler(process_id: int, user: User = Depends(authorize)):
-    return await get_process(pk=process_id, account__user=user)
 
 
 __all__ = ('router',)

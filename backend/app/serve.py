@@ -5,8 +5,8 @@ from propan.config import settings
 from config.dependencies import es
 
 from db.postgres import connect_db, close_db
-from db.postgres.processes import get_monitorings
 from db.postgres.channels import get_channel
+from db.posts.schemas import ProcessStatus
 
 from services.tg import add_listener
 from tg.clients import TgClientRepository
@@ -25,10 +25,10 @@ async def startup() -> None:
 
     settings.CLIENTS = await TgClientRepository.create()
 
-    for process in await get_monitorings():
+    for process in await ProcessStatus.get_monitorings():
         await add_listener(
-            client=settings.CLIENTS.get_client(process.account.user.id, process.account.id),
-            channel_link=(await get_channel(pk=process.channel.id)).link
+            client=settings.CLIENTS.get_client(process.user_id, process.account_id),
+            channel_link=(await get_channel(pk=process.channel_id)).link
         )
 
 

@@ -5,7 +5,7 @@ from pprint import pprint
 from propan.config import settings
 
 from config.dependencies import es
-from db.posts import POSTS_MAPPING
+from db.posts import POSTS_MAPPING, PROCESSES_MAPPING
 
 
 def close_es(func):
@@ -22,11 +22,16 @@ def close_es(func):
 async def create_scheme():
     try:
         await es.indices.delete(index=settings.POSTS)
+        await es.indices.delete(index=settings.PROCESSES)
     except Exception:
         pass
 
     pprint(await es.indices.create(index=settings.POSTS, mappings={
         "properties": POSTS_MAPPING
+    }))
+
+    pprint(await es.indices.create(index=settings.PROCESSES, mappings={
+        "properties": PROCESSES_MAPPING
     }))
 
 
