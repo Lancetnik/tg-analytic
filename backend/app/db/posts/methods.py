@@ -72,7 +72,7 @@ async def get_process(task_id=None) -> 'ProcessStatus':
 async def find_process(user_id, account_id=None, channel_id=None, status=None) -> 'ProcessStatus':
     must = [{"match": { "user_id": user_id }}]
     if account_id: must.append({"match": { "account_id": account_id }})
-    if channel_id: must.append({"match": { "channel_id": account_id }})
+    if channel_id: must.append({"match": { "channel_id": channel_id }})
     if status: must.append({"match": { "status": status }})
 
     try:

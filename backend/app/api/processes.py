@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Response, status
+from fastapi.exceptions import HTTPException
 
 from db.posts.schemas import ProcessStatus, Status
 from services.dependencies import (
@@ -62,6 +63,16 @@ async def start_history_handler(
     user_id: int = Depends(authorize),
     pause: float = 0.3
 ):
+    if (p := await ProcessStatus.find(
+        user_id=user_id,
+        channel_id=channel.id,
+        status=Status.history.value)
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail=f"`{channel.link}` already parsing at task `{p.task_id}`"
+        )
+
     process = ProcessStatus(
         account_id=account, channel_id=channel.id,
         user_id=user_id, status=Status.history.value
@@ -77,6 +88,7 @@ async def start_history_handler(
 )
 async def toggle_process_handler(
     status: Status,
+    user_id: int = Depends(authorize),
     task: ProcessStatus = Depends(get_task),
     client = Depends(get_client_by_task),
     channel = Depends(get_task_channel)
@@ -95,6 +107,16 @@ async def toggle_process_handler(
         await add_listener(client, channel.link)
 
     elif status == Status.history:
+        if (p := await ProcessStatus.find(
+            user_id=user_id,
+            channel_id=channel.id,
+            status=Status.history.value)
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=f"`{channel.link}` already parsing at task `{p.task_id}`"
+            )
+
         if process.status == Status.history_stopped \
         or process.status == Status.error:
             await process.delete()

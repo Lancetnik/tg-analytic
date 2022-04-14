@@ -14,11 +14,6 @@ from tg.methods import start_client
 @async_to_sync
 async def parse_channel(self, account_id, channel_id, pause=0.1):
     acc = await accounts.get_account(pk=account_id)
-
-    if (task := await ProcessStatus.find(user_id=acc.user_id, status=Status.history.value)):
-        logger.info(f'Parsing channel {channel_id} already running by user {acc.user_id}')
-        raise Ignore()
-
     client = await start_client(acc.api_id, acc.api_hash, acc.session)
     channel = await channels.get_channel(pk=channel_id)
 

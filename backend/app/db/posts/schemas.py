@@ -153,7 +153,10 @@ class ProcessStatus(BaseModel):
     
     @classmethod
     async def find(cls, user_id: str, **kwargs) -> 'ProcessStatus':
-        return await methods.find_process(user_id, **kwargs)
+        p = await methods.find_process(user_id, **kwargs)
+        if p is None:
+            return p
+        return cls.from_elastic(p)
 
     async def update(self, **params):
         data = self.dict()
