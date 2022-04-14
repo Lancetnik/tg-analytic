@@ -70,6 +70,7 @@ services:
 
   sockets:
     build: ./websockets
+    container_name: tg-analytic-sockets
     volumes:
       - ./websockets/app:/code
     networks:
@@ -79,18 +80,36 @@ services:
       - 8002:8002
     command: venv/bin/uvicorn serve:app --host 0.0.0.0 --port 8001
   
+  postgres-auth:
+    image: postgres:14
+    container_name: tg-analytic-pg-auth
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: user
+      POSTGRES_DB: db
+    volumes:
+      - data_pg_auth:/var/lib/postgresql/data
+    ports:
+      - 5434:5432
+    networks:
+      - app-net
+
   auth:
     build: ./auth
+    container_name: tg-analytic-auth
     volumes:
       - ./auth/app:/code
     networks:
       - app-net
     depends_on:
-      - postgres
+      - postgres-auth
+    environment:
+      POSTGRES_HOST: tg-analytic-pg-auth
+      POSTGRES_PORT: 5432
     ports:
       - 8003:8003
       - 8004:8004
-    command: venv/bin/uvicorn serve:app --host 0.0.0.0 --port 8003
+    command: venv/bin/gunicorn serve:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8003
 
   app:
     build: ./backend
@@ -105,16 +124,18 @@ services:
       - minio
       - postgres
     environment:
-      REDIS_HOST: redis
-      MINIO_HOST: minio
-      ELASTIC_HOST: es
+      REDIS_HOST: tg-analytic-redis
+      MINIO_HOST: tg-analytic-minio
+      ELASTIC_HOST: es-container
       WEBSOCKETS_HOST: sockets
-      AUTH_HOST: auth
-      POSTGRES_HOST: postgres
+      WEBSOCKETS_PORT: 8002
+      AUTH_HOST: tg-analytic-auth
+      AUTH_PORT: 8004
+      POSTGRES_HOST: tg-analytic-pg
       POSTGRES_PORT: 5432
     ports:
       - 8000:8000
-    command: venv/bin/uvicorn serve:app --host 0.0.0.0 --port 8000
+    command: venv/bin/gunicorn serve:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 
   celery:
     build: ./backend
@@ -144,6 +165,8 @@ volumes:
   data_pg:
     driver: local
   minio-storage:
+    driver: local
+  data_pg_auth:
     driver: local
 
 networks:

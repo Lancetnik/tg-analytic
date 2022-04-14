@@ -5,11 +5,10 @@ email-validator==1.0.5
 fastapi==0.75.1
 grpcio==1.44.0
 grpcio-tools==1.44.0
+gunicorn==20.1.0
 ormar==0.10.24
 passlib==1.7.2
 propan==0.0.3.7
 python-jose==3.1.0
 python-multipart==0.0.5
 uvicorn==0.17.6
-
-loguru
