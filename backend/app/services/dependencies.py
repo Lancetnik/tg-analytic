@@ -13,17 +13,20 @@ from .schemas import Pagination
 from .auth import check_token
 
 
-async def authorize(authorization: str = Header(...)) -> 'user_id':
-    try:
-        token = authorization.split()[-1]
-    except Exception:
-        raise HTTPException(status_code=401)
+async def authorize() -> 'user_id':
+    return 1
 
-    user_id = await check_token(token)
-    if user_id == 0:
-        raise HTTPException(status_code=401)
-    else:
-        return user_id
+# async def authorize(authorization: str = Header(...)) -> 'user_id':
+    # try:
+    #     token = authorization.split()[-1]
+    # except Exception:
+    #     raise HTTPException(status_code=401)
+
+    # user_id = await check_token(token)
+    # if user_id == 0:
+    #     raise HTTPException(status_code=401)
+    # else:
+    #     return user_id
 
 
 async def default_client(user_id: int = Depends(authorize)) -> Optional['client']:

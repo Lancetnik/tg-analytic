@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from propan.config import settings
 
-from config.dependencies import es
+from config.dependencies import es, redis
 
 from db.postgres import connect_db, close_db
 from db.postgres.channels import get_channel

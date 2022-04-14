@@ -90,7 +90,7 @@ async def send_phone_code(account):
     await client.send_code_request(account.phone)
 
     code_hash = client._phone_code_hash[account.phone]
-    session=client.session.save()
+    session = client.session.save()
     
     await redis.hset(account.id, mapping={
         'session': session,

@@ -69,24 +69,23 @@ async def get_process(task_id=None) -> 'ProcessStatus':
         return None
 
 
-async def find_process(user_id, account_id, channel_id, status) -> 'ProcessStatus':
-    return (await es.search(
-        index=settings.PROCESSES,
-        filter_path=['hits.hits._id', 'hits', 'hits.hits._source'],
-        query={
-            "bool": {
-                "must": [
-                    {"match": { "user_id": user_id }},
-                    {"match": { "channel_id": channel_id }},
-                    {"match": { "account_id": account_id }},
-                    {"match": { "status": status }}
-                ]
-            }
-        },
-        sort=[
-            {"updated": {"order": "desc", "format": "strict_date_optional_time_nanos"}},
-        ],
-    ))['hits']['hits'][0]
+async def find_process(user_id, account_id=None, channel_id=None, status=None) -> 'ProcessStatus':
+    must = [{"match": { "user_id": user_id }}]
+    if account_id: must.append({"match": { "account_id": account_id }})
+    if channel_id: must.append({"match": { "channel_id": account_id }})
+    if status: must.append({"match": { "status": status }})
+
+    try:
+        return (await es.search(
+            index=settings.PROCESSES,
+            filter_path=['hits.hits._id', 'hits', 'hits.hits._source'],
+            query={"bool": { "must": must }},
+            sort=[
+                {"updated": {"order": "desc", "format": "strict_date_optional_time_nanos"}},
+            ],
+        ))['hits']['hits'][0]
+    except IndexError:
+        return None
 
 
 async def delete_process(task_id: str):

@@ -14,6 +14,11 @@ from tg.methods import start_client
 @async_to_sync
 async def parse_channel(self, account_id, channel_id, pause=0.1):
     acc = await accounts.get_account(pk=account_id)
+
+    if (task := await ProcessStatus.find(user_id=acc.user_id, status=Status.history.value)):
+        logger.info(f'Parsing channel {channel_id} already running by user {acc.user_id}')
+        raise Ignore()
+
     client = await start_client(acc.api_id, acc.api_hash, acc.session)
     channel = await channels.get_channel(pk=channel_id)
 
@@ -48,6 +53,17 @@ async def parse_channel(self, account_id, channel_id, pause=0.1):
 
 def kill_task(task_id: str, wait: bool = True):
     task = AbortableAsyncResult(task_id)
-    task.abort()
-    if wait is True:
-        task.get()
+    if is_task_running(task_id) and not task.is_aborted():
+        task.abort()
+        if wait is True:
+            task.get()
+
+
+def is_task_running(task_id):
+    apps_dict = celery.control.inspect().active()
+    if apps_dict:
+        for worker, tasks in apps_dict.items():
+            for task in tasks:
+                if task_id == task['id']:
+                    return True
+    return False

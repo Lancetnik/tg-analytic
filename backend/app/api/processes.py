@@ -101,6 +101,9 @@ async def toggle_process_handler(
 
         task = parse_channel.delay(task.account_id, channel.id)
         process = await process.update(status=status.value, task_id=task.id)
+    
+    elif status == Status.history_stopped:
+        process = await process.update(status=Status.history_stopped.value)
 
     return process
 

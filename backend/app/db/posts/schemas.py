@@ -150,6 +150,10 @@ class ProcessStatus(BaseModel):
             return process
         else:
             return None
+    
+    @classmethod
+    async def find(cls, user_id: str, **kwargs) -> 'ProcessStatus':
+        return await methods.find_process(user_id, **kwargs)
 
     async def update(self, **params):
         data = self.dict()
