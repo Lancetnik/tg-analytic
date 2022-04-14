@@ -127,7 +127,7 @@ services:
       REDIS_HOST: tg-analytic-redis
       MINIO_HOST: tg-analytic-minio
       ELASTIC_HOST: es-container
-      WEBSOCKETS_HOST: sockets
+      WEBSOCKETS_HOST: tg-analytic-sockets
       WEBSOCKETS_PORT: 8002
       AUTH_HOST: tg-analytic-auth
       AUTH_PORT: 8004
@@ -150,14 +150,54 @@ services:
       - minio
       - postgres
     environment:
-      REDIS_HOST: redis
-      MINIO_HOST: minio
-      ELASTIC_HOST: es
-      WEBSOCKETS_HOST: sockets
-      AUTH_HOST: auth
-      POSTGRES_HOST: postgres
+      REDIS_HOST: tg-analytic-redis
+      MINIO_HOST: tg-analytic-minio
+      ELASTIC_HOST: es-container
+      WEBSOCKETS_HOST: tg-analytic-sockets
+      WEBSOCKETS_PORT: 8002
+      AUTH_HOST: tg-analytic-auth
+      AUTH_PORT: 8004
+      POSTGRES_HOST: tg-analytic-pg
       POSTGRES_PORT: 5432
     command: venv/bin/celery -A worker.celery worker -l info
+
+  flower:
+    build: ./backend
+    container_name: tg-analytic-celery-flower
+    volumes:
+      - ./backend/app:/code
+    ports:
+      - 5555:5555
+    networks:
+      - app-net
+    environment:
+      REDIS_HOST: tg-analytic-redis
+    depends_on:
+      - celery
+      - redis
+    command: venv/bin/celery -A worker.celery flower
+  
+  prometheus:
+    image: prom/prometheus:v2.35.0-rc0
+    container_name: tg-analytic-prometheus
+    networks:
+      - app-net
+    depends_on:
+      - flower
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+  
+  grafana:
+    image: grafana/grafana:8.4.6-ubuntu
+    container_name: tg-analytic-grafana
+    networks:
+      - app-net
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
 
 volumes:
   data_es:

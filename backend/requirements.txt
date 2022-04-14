@@ -4,10 +4,12 @@ asyncpg==0.25.0
 celery==5.2.6
 elasticsearch==8.1.2
 fastapi==0.75.1
+flower==1.0.0
 grpcio==1.44.0
 grpcio-tools==1.44.0
 gunicorn==20.1.0
 ormar==0.10.24
 propan==0.0.3.7
+redis==4.2.2
 telethon==1.24.0
 uvicorn==0.17.6
